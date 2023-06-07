@@ -1,0 +1,2 @@
+git+ssh://git@github.com/quotecenter/de-etl-composer-common@main
+pytest==7.2.0

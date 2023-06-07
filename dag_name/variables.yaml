@@ -1,0 +1,96 @@
+# Configuration file "variables.yaml"
+# Parsing function: composer_common.configuration.variables_yaml.get()
+#
+# Details: https://hdquotecenter.atlassian.net/wiki/spaces/DW/pages/3753672713/Setting+up+the+DAG+configuration
+
+dag_name: # TODO Replace with the actual DAG name (which must be identical to the folder name containing the DAG files)
+
+  global:
+    # Global environment.
+    # Key-value pairs from this environment are used in all specified environments.
+
+    sources:
+      # Predefined block for pipeline-related BigQuery tables and views
+      # Please, follow the Confluence page above to see how to use this block
+
+      tables:
+        # TODO example. Please remove this table before actual use.
+        ExampleSource:
+          stg_dataset_key: src_QCDataLake
+          dataset_key: src_QCDataWarehouse
+          write_disposition: "WRITE_APPEND"
+
+      views:
+        # TODO example. Please remove this view before actual use.
+        ExampleSource:
+          dataset_key: src_QCDataWarehouseViews
+          datasets_to_share:
+            - src_QCDataWarehouse
+
+  prod:
+    de_gcp_project_id: "analytics-quotecenter-prod"
+
+    projects:
+      SSC: "pr-edw-views-thd"
+
+    # Datasets with prefix "src_" are used only for tables/views that are created/changed by the pipeline.
+    # It helps to separate DEV tables and MOCK tables from the same datasets in parametrized SQL queries.
+    datasets:
+
+      # TODO example (datasets that start with src_). Please remove these datasets before actual use.
+      src_QCDataLake: "qc_data_lake_data"
+      src_QCDataLakeViews: "qc_data_lake_views"
+      src_QCDataWarehouse: "qc_data_warehouse_data"
+      src_QCDataWarehouseViews: "qc_data_warehouse_views"
+
+      QCDataLake: "qc_data_lake_data"
+      QCDataLakeViews: "qc_data_lake_views"
+      QCDataWarehouse: "qc_data_warehouse_data"
+      QCDataWarehouseViews: "qc_data_warehouse_views"
+
+      Opportunity: "PR_Opportunity"
+
+      # datasets from another projects
+      SSC_ASSOC: "ASSOC"
+      SSC_ComRewards: "REWARDS"
+      SSC_SHARED: "SHARED"
+
+    secrets:
+      # Predefined block for secrets from Google Secret Manager. The value is supposed to be a secret id in the Manager.
+      # Access in a DAG via macros, example: "{{ access_cen_sql_pw() }}"
+      cen_sql_pw: de-pr-de-cen-sql-pw
+      cen_sql_user: de-pr-de-cen-sql-user
+
+  dev:
+    de_gcp_project_id: "np-quotecenter"
+
+    projects:
+      SSC: "np-quotecenter"
+
+    # Datasets with prefix "src_" are used only for tables/views that are created/changed by the pipeline.
+    # It helps to separate DEV tables and MOCK tables from the same datasets in parametrized SQL queries.
+    datasets:
+
+      # TODO example (datasets that start with src_). Please remove these datasets before actual use.
+      src_QCDataLake: "de_etl_Masterdata_DEV"
+      src_QCDataLakeViews: "de_etl_Masterdata_DEV_VIEWS"
+      src_QCDataWarehouse: "de_etl_Masterdata_DEV"
+      src_QCDataWarehouseViews: "de_etl_Masterdata_DEV_VIEWS"
+
+      QCDataLake: "qc_data_lake_data_MOCK"
+      QCDataLakeViews: "qc_data_lake_views_MOCK"
+      QCDataWarehouse: "qc_data_warehouse_data_MOCK"
+      QCDataWarehouseViews: "qc_data_warehouse_views_MOCK"
+
+      Opportunity: "PR_OPPORTUNITY_MOCK"
+
+      # datasets from another projects
+      SSC_ASSOC: "EDW_MOCK_DATASET"
+      SSC_ComRewards: "EDW_MOCK_DATASET"
+      SSC_SHARED: "EDW_MOCK_DATASET"
+
+    secrets:
+      # Predefined block for secrets from Google Secret Manager. The value is supposed to be a secret id in the Manager.
+      # Access in a DAG via macros, example: "{{ access_cen_sql_pw() }}"
+      cen_sql_pw: de-np-de-cen-sql-pw
+      cen_sql_user: de-np-de-cen-sql-user

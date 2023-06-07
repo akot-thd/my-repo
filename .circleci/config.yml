@@ -1,0 +1,108 @@
+# THIS IS A TEMPLATE FOR THE CI/CD CONFIGURATION IN CIRCLECI
+#
+# Set up a project in CircleCI and replace TODO lines in this file before actual use.
+#
+# Confluence page with details: https://hdquotecenter.atlassian.net/wiki/spaces/DW/pages/3641835529/CI+CD+for+DAGs
+
+version: 2.1
+
+
+orbs:
+  shellcheck: circleci/shellcheck@2.2.4
+  shiftleft: shiftleft/shiftleft@1.0.6
+
+
+executors:
+  google_cloud_sdk:
+    working_directory: ~/circleci-python
+    docker:
+      - image: "google/cloud-sdk"
+
+
+commands:
+  init_cicd:
+    description: Checkout and prepare default CI/CD scripts
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "65:d7:1e:be:b2:11:dd:86:5a:8b:78:92:2a:ed:cd:d1"  # access to quotecenter/de-etl-ci-cd
+      - run:
+          name: Checkout quotecenter/de-etl-ci-cd
+          command: |
+            git clone git@github.com:quotecenter/de-etl-ci-cd.git
+            cd de-etl-ci-cd
+            git checkout main
+            pip install -r requirements.txt
+            cd ..
+      - run:
+          name: Authorize in Google Cloud
+          command: bash de-etl-ci-cd/authorize_in_gcp.sh
+
+  build_artifacts:
+    description: Version and Build
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "c9:d8:37:2d:24:d5:d9:08:e0:ff:49:a3:56:d5:e8:54"  # access to quotecenter/de-artifact-versions
+      - run:
+          name: Generate a new version for artifacts
+          command: bash de-etl-ci-cd/generate_new_version.sh
+      - run:
+          name: Create artifacts
+          command: bash de-etl-ci-cd/create_artifacts.sh
+      - run:
+          name: Update version
+          command: bash de-etl-ci-cd/version_and_tag.sh
+      - store_artifacts:
+          path: artifacts
+
+
+jobs:
+  test:
+    executor: google_cloud_sdk
+    steps:
+      - checkout
+      - init_cicd
+      - add_ssh_keys:
+          fingerprints:
+            - "d1:c8:1c:91:05:00:a0:9a:35:ed:13:00:af:ac:fb:e8"  # access to quotecenter/de-etl-composer-common
+      - run:
+          name: Install test requirements
+          command: pip install -r requirements.txt
+      - run:
+          name: Run tests
+          command: python3 -m pytest tests --junitxml=test-results/junit/unittest.xml
+      - store_test_results:
+          path: test-results
+
+  build:
+    executor: google_cloud_sdk
+    steps:
+      - checkout
+      - init_cicd
+      - build_artifacts
+
+  security-scan:
+    docker:
+      - image: cimg/python:3.8
+    steps:
+      - checkout
+      - run: ls -l
+      - shiftleft/analyze:
+          app: REPO_NAME          # TODO Replace with repo name, example: de-etl-pendo
+          target: DAG_PATH        # TODO Path to the folder with DAG files, example: pendo
+          language: python
+          extra-args: --team THD-QuoteCenter --tag app.group=THD-QC --tag app.group=QC-DataEngineering
+
+
+workflows:
+  build_dag_artifacts:
+    jobs:
+      - test:
+          context: quotecenter
+      - build:
+          context: quotecenter
+          requires:
+            - test
+      - security-scan:
+          context: ShiftLeft
